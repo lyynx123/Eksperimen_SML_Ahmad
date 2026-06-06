@@ -1,0 +1,46 @@
+name: Automated Data Preprocessing
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  preprocess:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    # Menggunakan versi Python rekomendasi dari Dicoding
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12.7'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas numpy scikit-learn
+
+    # Menjalankan skrip otomatisasi di dalam folder preprocessing
+    - name: Run Preprocessing Script
+      run: |
+        python preprocessing/automate_Ahmad.py
+
+    # Mengubah setingan default skrip agar membaca file mentah di root folder luar
+    # dan menyimpannya ke dalam folder preprocessing
+    - name: Adjust Path and Execute
+      run: |
+        sed -i 's/"WA_Fn-UseC_-Telco-Customer-Churn.csv"/"WA_Fn-UseC_-Telco-Customer-Churn.csv"/g' preprocessing/automate_Ahmad.py
+        sed -i 's/"namadataset_preprocessing.csv"/"preprocessing\/namadataset_preprocessing.csv"/g' preprocessing/automate_Ahmad.py
+        python preprocessing/automate_Ahmad.py
+
+    - name: Commit and Push Clean Dataset
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add preprocessing/namadataset_preprocessing.csv
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Auto: Update preprocessed dataset" && git push)
